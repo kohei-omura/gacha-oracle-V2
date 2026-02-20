@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔮 GACHA ORACLE — 霊眼統合占術システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  --void:    #07040E;
+  --deep:    #0F0820;
+  --well:    #160C2E;
+  --rim:     rgba(255,255,255,.07);
+  --glass:   rgba(255,255,255,.034);
+  --gold:    #C9A84C;
+  --gold-l:  #EDD070;
+  --gold-d:  #7A5518;
+  --iris:    #8B5CF6;
+  --iris-l:  #A78BFA;
+  --rose:    #E05585;
+  --ice:     #38BDF8;
+  --green:   #34D399;
+  --text:    #EDE6F5;
+  --muted:   #6E5F88;
+  --danger:  #F87171;
+  --r:       18px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Serif JP', serif;
+  background: var(--void);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Layered background ── */
+.bg-nebula {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 65% 55% at 15% 10%, rgba(80,30,160,.22) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 45% at 85% 85%, rgba(201,168,76,.10) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 35% at 55% 40%, rgba(139,92,246,.07) 0%, transparent 50%);
+}
+
+/* grain texture */
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .22;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+canvas#cosmos { position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.wrap { position:relative; z-index:2; max-width:760px; margin:0 auto; padding:0 18px 100px; }
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+.hdr {
+  text-align:center; padding:72px 0 52px;
+  animation: riseIn 1.2s cubic-bezier(.16,1,.3,1) both;
+}
+
+.hdr-sigil {
+  font-size:3.4rem; display:block; margin-bottom:18px;
+  filter: drop-shadow(0 0 28px rgba(201,168,76,.75));
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-14px) rotate(4deg)} }
+
+.hdr h1 {
+  font-family:'Cinzel',serif;
+  font-size: clamp(1.5rem, 5.5vw, 2.9rem);
+  font-weight:700; letter-spacing:.16em; line-height:1.18;
+  background: linear-gradient(135deg, #A78BFA 0%, #EDD070 48%, #E05585 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter: drop-shadow(0 0 40px rgba(201,168,76,.28));
+  margin-bottom:12px;
+}
+.hdr-sub {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:1rem; color:var(--muted); letter-spacing:.14em;
+}
+.hdr-tags {
+  margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+}
+.hdr-tag {
+  font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.18em;
+  color:var(--gold); border:1px solid rgba(201,168,76,.25);
+  border-radius:20px; padding:4px 12px; text-transform:uppercase;
+  background:rgba(201,168,76,.06);
+}
+
+/* ═══════════════════════════════════════
+   GLASS CARDS
+═══════════════════════════════════════ */
+.glass {
+  background:var(--glass);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  border:1px solid var(--rim);
+  border-radius:var(--r);
+  padding:36px;
+  margin-bottom:18px;
+  position:relative; overflow:hidden;
+  animation: riseIn .8s cubic-bezier(.16,1,.3,1) both;
+}
+.glass::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent 0%, var(--iris-l) 30%, var(--gold) 60%, var(--rose) 85%, transparent 100%);
+  opacity:.55;
+}
+
+@keyframes riseIn { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:translateY(0)} }
+
+/* ═══════════════════════════════════════
+   FORM
+═══════════════════════════════════════ */
+.sec-title {
+  font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:26px;
+  display:flex; align-items:center; gap:12px;
+}
+.sec-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(201,168,76,.4),transparent); }
+
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+.span2 { grid-column:1/-1; }
+
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label {
+  font-family:'Cinzel',serif; font-size:.64rem; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--gold);
+}
+.field label .opt { font-family:'Noto Serif JP',serif; text-transform:none; font-size:.62rem; color:var(--muted); letter-spacing:0; margin-left:6px; }
+
+.field select,
+.field input[type=text],
+.field input[type=date],
+.field input[type=time] {
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+  border-radius:10px; color:var(--text);
+  padding:12px 14px; font-size:.88rem;
+  font-family:'Noto Serif JP',serif;
+  transition:border-color .22s, box-shadow .22s;
+  appearance:none; -webkit-appearance:none; width:100%;
+}
+.field select:focus, .field input:focus {
+  outline:none; border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(201,168,76,.13), inset 0 0 18px rgba(201,168,76,.04);
+}
+.field select option { background:#150A30; }
+
+/* ═══════════════════════════════════════
+   ORACLE BUTTON
+═══════════════════════════════════════ */
+.oracle-btn {
+  width:100%; padding:20px; margin-top:28px;
+  background:linear-gradient(135deg,#3B1E8A,#6D28D9,#8B5CF6);
+  background-size:200% 200%;
+  animation:gradShift 4s ease infinite;
+  border:1px solid rgba(139,92,246,.45);
+  border-radius:14px; color:#fff;
+  font-family:'Cinzel',serif; font-size:1rem; font-weight:600; letter-spacing:.2em;
+  cursor:pointer; position:relative; overflow:hidden;
+  transition:transform .14s, box-shadow .3s;
+  box-shadow:0 0 30px rgba(139,92,246,.25);
+}
+.oracle-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(rgba(255,255,255,.09),transparent); pointer-events:none; }
+.oracle-btn:hover { transform:translateY(-2px); box-shadow:0 10px 48px rgba(139,92,246,.5), 0 0 60px rgba(201,168,76,.12); }
+.oracle-btn:active { transform:translateY(0); }
+@keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+/* ═══════════════════════════════════════
+   LOADING
+═══════════════════════════════════════ */
+.loading-wrap { display:none; text-align:center; padding:64px 20px; }
+.loading-wrap.show { display:block; }
+
+.orb-ring {
+  width:86px; height:86px; margin:0 auto 28px; position:relative;
+}
+.orb-ring::before, .orb-ring::after {
+  content:''; position:absolute; border-radius:50%; border:2px solid transparent;
+}
+.orb-ring::before {
+  inset:0; border-top-color:var(--iris-l); border-right-color:var(--gold);
+  animation:spin 1.2s linear infinite;
+}
+.orb-ring::after {
+  inset:14px; border-bottom-color:var(--rose); border-left-color:var(--ice);
+  animation:spin .75s linear infinite reverse;
+}
+.orb-crystal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; animation:pulse 1.6s ease-in-out infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes pulse { 0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(.88)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)} }
+
+.load-steps { margin-top:28px; }
+.load-step { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.95rem; color:var(--muted); margin:8px 0; opacity:0; transition:opacity .4s; }
+.load-step.lit { opacity:1; color:var(--gold-l); }
+
+/* ═══════════════════════════════════════
+   RESULT WRAPPER
+═══════════════════════════════════════ */
+.result-wrap { display:none; }
+.result-wrap.show { display:block; animation:riseIn .8s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Score Hero ── */
+.score-hero { text-align:center; padding:52px 20px 40px; }
+.ring-wrap { width:176px; height:176px; margin:0 auto 22px; position:relative; }
+.ring-wrap svg { width:100%; height:100%; transform:rotate(-90deg); filter:drop-shadow(0 0 16px rgba(201,168,76,.42)); }
+.ring-inner { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.score-num {
+  font-family:'Cinzel',serif; font-size:3.2rem; font-weight:700; line-height:1;
+  background:linear-gradient(180deg,var(--gold-l),var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(201,168,76,.6));
+}
+.score-lbl { font-size:.6rem; color:var(--muted); letter-spacing:.22em; text-transform:uppercase; margin-top:4px; }
+
+.verdict-badge {
+  display:inline-block; font-family:'Cinzel',serif; font-size:.82rem;
+  letter-spacing:.14em; padding:8px 26px; border-radius:40px; border:1px solid;
+  margin-bottom:16px;
+}
+
+.game-title-disp { font-size:1.1rem; font-weight:700; margin-bottom:5px; }
+.target-disp { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; color:var(--gold); }
+
+/* ── Lunar Widget ── */
+.lunar-chip {
+  display:inline-flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  border-radius:40px; padding:8px 18px; margin-top:14px;
+  font-size:.8rem; color:var(--muted);
+}
+.lunar-chip .lc-name { color:var(--text); font-weight:700; }
+
+/* ═══════════════════════════════════════
+   TIME CARDS
+═══════════════════════════════════════ */
+.times-heading {
+  font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.22em; color:var(--gold);
+  text-align:center; margin:32px 0 16px; text-transform:uppercase;
+}
+
+.tc {
+  border-radius:var(--r); padding:20px 22px; margin-bottom:12px;
+  border:1px solid rgba(255,255,255,.08);
+  position:relative; overflow:hidden;
+  transition:transform .22s, box-shadow .22s;
+}
+.tc:hover { transform:translateX(5px); }
+.tc.r1 { background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(139,92,246,.08)); border-color:rgba(201,168,76,.38); box-shadow:0 0 32px rgba(201,168,76,.10); }
+.tc.r2 { background:linear-gradient(135deg,rgba(139,92,246,.11),rgba(56,189,248,.06)); border-color:rgba(139,92,246,.25); }
+.tc.r3 { background:linear-gradient(135deg,rgba(224,85,133,.09),rgba(139,92,246,.06)); border-color:rgba(224,85,133,.2); }
+.tc.rlo { background:rgba(255,255,255,.03); }
+.tc.expired { opacity:.4; filter:grayscale(.6); pointer-events:none; }
+
+.tc-top { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.tc-rank-num { font-family:'Cinzel',serif; font-size:.62rem; color:var(--muted); letter-spacing:.1em; position:absolute; top:16px; right:16px; }
+.tc-date { font-family:'Cinzel',serif; font-size:.7rem; color:var(--gold); letter-spacing:.1em; }
+.tc-time { font-family:'Cinzel',serif; font-size:1.42rem; font-weight:700; color:var(--text); letter-spacing:.04em; }
+
+.tc-pinpoint {
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:.82rem; font-weight:700; color:var(--danger);
+  background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.25);
+  border-radius:8px; padding:5px 12px; margin-bottom:13px;
+}
+
+.tc-bot { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.tc-pulls {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(201,168,76,.12); border:1px solid rgba(201,168,76,.28);
+  border-radius:8px; padding:6px 14px;
+  font-family:'Cinzel',serif; font-size:.78rem; color:var(--gold-l);
+}
+.tc-pulls strong { font-size:1.1rem; }
+.tc-bar { flex:1; height:4px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden; min-width:50px; }
+.tc-bar-fill { height:100%; border-radius:4px; }
+
+.badge {
+  font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.08em; font-weight:600;
+  padding:3px 10px; border-radius:20px;
+}
+.b-urgent  { background:rgba(248,113,113,.18); border:1px solid rgba(248,113,113,.38); color:var(--danger); }
+.b-special { background:rgba(201,168,76,.18); border:1px solid rgba(201,168,76,.38); color:var(--gold-l); }
+.b-done    { background:rgba(255,255,255,.05); border:1px solid var(--rim); color:var(--muted); }
+
+/* ═══════════════════════════════════════
+   DIVINATION CARDS
+═══════════════════════════════════════ */
+.div-grid { display:grid; gap:13px; margin-top:16px; }
+.div-card {
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+  border-radius:14px; padding:20px;
+  transition:border-color .22s;
+}
+.div-card:hover { border-color:rgba(201,168,76,.22); }
+.div-hdr { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+.div-icon { font-size:1.25rem; flex-shrink:0; }
+.div-name { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.16em; color:var(--gold); text-transform:uppercase; }
+.div-score { margin-left:auto; font-family:'Cinzel',serif; font-size:.68rem; padding:3px 10px; border-radius:20px; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.22); color:var(--gold-l); }
+.div-bar { height:3px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; margin-bottom:11px; }
+.div-bar-fill { height:100%; border-radius:2px; }
+.div-body { font-family:'Cormorant Garamond',serif; font-size:1.02rem; line-height:1.78; color:rgba(237,230,245,.88); }
+
+/* ═══════════════════════════════════════
+   OCCULT BOX
+═══════════════════════════════════════ */
+.occult-box {
+  border-radius:var(--r); padding:26px;
+  background:rgba(139,92,246,.06); border:1px dashed rgba(139,92,246,.3);
+}
+.occult-title { font-family:'Cinzel',serif; font-size:.76rem; letter-spacing:.2em; color:var(--iris-l); text-align:center; margin-bottom:4px; text-transform:uppercase; }
+.occult-sub { font-size:.7rem; color:var(--muted); text-align:center; margin-bottom:18px; }
+.jinx {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 14px; margin-bottom:8px; border-radius:10px;
+  font-size:.88rem; line-height:1.55;
+}
+.jinx:nth-child(odd)  { background:rgba(139,92,246,.08); }
+.jinx:nth-child(even) { background:rgba(201,168,76,.06); }
+.jinx-ic { flex-shrink:0; font-size:1.05rem; }
+
+/* ═══════════════════════════════════════
+   LUCKY ACTIONS
+═══════════════════════════════════════ */
+.action-list { list-style:none; }
+.action-item {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:.88rem; line-height:1.65;
+}
+.action-item:last-child { border-bottom:none; }
+.action-num {
+  flex-shrink:0; width:22px; height:22px; border-radius:50%;
+  background:rgba(201,168,76,.14); border:1px solid rgba(201,168,76,.28);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Cinzel',serif; font-size:.58rem; color:var(--gold); margin-top:2px;
+}
+
+/* ═══════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════ */
+.dl-btn, .rst-btn {
+  width:100%; padding:17px; border:none; border-radius:12px;
+  font-family:'Cinzel',serif; font-size:.86rem; font-weight:600; letter-spacing:.16em;
+  cursor:pointer; overflow:hidden; transition:transform .15s, box-shadow .3s; margin-top:12px;
+}
+.dl-btn {
+  background:linear-gradient(135deg,#7A5518,#C9A84C,#EDD070); color:#06040C;
+  box-shadow:0 4px 24px rgba(201,168,76,.3);
+}
+.dl-btn:hover { transform:translateY(-2px); box-shadow:0 8px 36px rgba(201,168,76,.48); }
+.rst-btn {
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); color:var(--muted);
+}
+.rst-btn:hover { border-color:var(--danger); color:var(--danger); background:rgba(248,113,113,.06); }
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+.site-footer {
+  text-align:center; padding:44px 0 20px;
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:.92rem; color:var(--muted); letter-spacing:.1em;
+}
+.site-footer span { color:var(--gold); }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media(max-width:560px) {
+  .form-grid { grid-template-columns:1fr; }
+  .glass { padding:22px 18px; }
+  .hdr { padding:48px 0 38px; }
+}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--void); }
+::-webkit-scrollbar-thumb { background:rgba(139,92,246,.38); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<canvas id="cosmos"></canvas>
+<div class="bg-nebula"></div>
+<div class="grain"></div>
+
+<div class="wrap">
+
+<!-- ── HEADER ── -->
+<header class="hdr">
+  <span class="hdr-sigil">🔮</span>
+  <h1>GACHA ORACLE<br><span style="font-size:.52em;letter-spacing:.32em;opacity:.8">霊眼統合占術システム</span></h1>
+  <p class="hdr-sub">by クトちゃん — 全占術 × オカルト情報 融合</p>
+  <div class="hdr-tags">
+    <span class="hdr-tag">西洋占星術</span>
+    <span class="hdr-tag">九星気学</span>
+    <span class="hdr-tag">四柱推命</span>
+    <span class="hdr-tag">月齢計算</span>
+    <span class="hdr-tag">タロット</span>
+    <span class="hdr-tag">数秘術</span>
+    <span class="hdr-tag">血液型</span>
+  </div>
+</header>
+
+<!-- ── FORM CARD ── -->
+<div class="glass">
+  <p class="sec-title">占術情報を入力</p>
+  <form id="fortuneForm">
+    <div class="form-grid">
+
+      <div class="field span2">
+        <label for="gameTitle">ゲームタイトル <span class="opt">※必須</span></label>
+        <select id="gameTitle" required>
+          <option value="">選択してください</option>
+          <option value="ウマ娘">ウマ娘 プリティーダービー</option>
+          <option value="ブルーアーカイブ">ブルーアーカイブ</option>
+          <option value="原神">原神</option>
+          <option value="NIKKE">勝利の女神：NIKKE</option>
+          <option value="崩壊：スターレイル">崩壊：スターレイル</option>
+          <option value="鳴潮">鳴潮</option>
+          <option value="Fate/GO">Fate/Grand Order</option>
+          <option value="ゼンレスゾーンゼロ">ゼンレスゾーンゼロ</option>
+          <option value="LINE MF">LINE モンスターファーム</option>
+          <option value="Echocalypse">Echocalypse</option>
+          <option value="Evertale">Evertale</option>
+          <option value="Pokémon Trading Card Game Pocket">Pokémon TCG Pocket</option>
+          <option value="プリコネR">プリンセスコネクト！Re:Dive</option>
+          <option value="グラブル">グランブルーファンタジー</option>
+          <option value="アズールレーン">アズールレーン</option>
+          <option value="ヘブバン">ヘブンバーンズレッド</option>
+          <option value="DQウォーク">ドラゴンクエストウォーク</option>
+          <option value="白猫">白猫プロジェクト</option>
+          <option value="その他">その他（自由入力）</option>
+        </select>
+      </div>
+
+      <div class="field span2" id="customGameGroup" style="display:none">
+        <label for="customGame">ゲームタイトルを入力</label>
+        <input type="text" id="customGame" placeholder="例: モンスターストライク">
+      </div>
+
+      <div class="field span2">
+        <label for="targetName">狙っているキャラ/武器名 <span class="opt">(任意)</span></label>
+        <input type="text" id="targetName" placeholder="例: 高坂麗奈、草薙の剣">
+      </div>
+
+      <div class="field span2">
+        <label for="gachaTitle">ガチャタイトル <span class="opt">(任意)</span></label>
+        <input type="text" id="gachaTitle" placeholder="例: 響け!ユーフォニアムコラボ、正月ガチャ">
+      </div>
+
+      <div class="field">
+        <label for="gachaDeadline">ガチャ期限（日付） <span class="opt">(任意)</span></label>
+        <input type="date" id="gachaDeadline">
+      </div>
+
+      <div class="field">
+        <label for="gachaDeadlineTime">ガチャ期限（時刻）</label>
+        <input type="time" id="gachaDeadlineTime" value="23:59">
+      </div>
+
+      <div class="field">
+        <label for="birthdate">生年月日 <span class="opt">(任意)</span></label>
+        <input type="date" id="birthdate" max="2010-12-31">
+      </div>
+
+      <div class="field">
+        <label for="zodiac">星座 <span class="opt">(任意)</span></label>
+        <select id="zodiac">
+          <option value="">選択</option>
+          <option>牡羊座</option><option>牡牛座</option><option>双子座</option><option>蟹座</option>
+          <option>獅子座</option><option>乙女座</option><option>天秤座</option><option>蠍座</option>
+          <option>射手座</option><option>山羊座</option><option>水瓶座</option><option>魚座</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="bloodType">血液型 <span class="opt">(任意)</span></label>
+        <select id="bloodType">
+          <option value="">選択</option>
+          <option>A型</option><option>B型</option><option>O型</option><option>AB型</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="eto">干支 <span class="opt">(任意)</span></label>
+        <select id="eto">
+          <option value="">選択</option>
+          <option value="子">子（ねずみ）</option><option value="丑">丑（うし）</option>
+          <option value="寅">寅（とら）</option><option value="卯">卯（うさぎ）</option>
+          <option value="辰">辰（たつ）</option><option value="巳">巳（へび）</option>
+          <option value="午">午（うま）</option><option value="未">未（ひつじ）</option>
+          <option value="申">申（さる）</option><option value="酉">酉（とり）</option>
+          <option value="戌">戌（いぬ）</option><option value="亥">亥（いのしし）</option>
+        </select>
+      </div>
+
+    </div><!-- /form-grid -->
+    <button type="submit" class="oracle-btn">✦ 霊眼を開く — 占術開始 ✦</button>
+  </form>
+</div>
+
+<!-- ── LOADING ── -->
+<div class="glass loading-wrap" id="loading">
+  <div class="orb-ring"><span class="orb-crystal">🔮</span></div>
+  <div class="load-steps">
+    <p class="load-step" id="ls1">✦ 天体の位相を計測中...</p>
+    <p class="load-step" id="ls2">✦ 月齢と潮汐力を解析中...</p>
+    <p class="load-step" id="ls3">✦ 九星気学の盤を展開中...</p>
+    <p class="load-step" id="ls4">✦ タロットカードを選定中...</p>
+    <p class="load-step" id="ls5">✦ 霊眼が開かれつつある...</p>
+  </div>
+</div>
+
+<!-- ── RESULT ── -->
+<div class="result-wrap" id="result"></div>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  Powered by <span>クトちゃん</span> 💫 霊眼統合占術システム<br>
+  <span style="font-size:.78rem;opacity:.6">西洋占星術 · 九星気学 · 四柱推命 · 月齢 · タロット · 数秘術 · 血液型 · 干支 統合</span>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════
+//   CANVAS COSMOS
+// ═══════════════════════════════════════════════════
+(function(){
+  const cv = document.getElementById('cosmos');
+  const ctx = cv.getContext('2d');
+  let W, H, stars = [], shoots = [];
+
+  function resize(){ W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  for(let i=0;i<220;i++) stars.push({
+    x: Math.random(), y: Math.random(),
+    r: Math.random()*1.3+.2,
+    a: Math.random(), da: (Math.random()-.5)*.006,
+    speed: Math.random()*.003+.0005
+  });
+
+  function addShoot(){
+    shoots.push({ x:Math.random()*W, y:Math.random()*H*.4, angle:-25+Math.random()*20, len:0, maxLen:80+Math.random()*120, speed:6+Math.random()*6, alpha:1 });
+  }
+  setInterval(addShoot, 3500);
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.a += s.da;
+      if(s.a<.08||s.a>1) s.da*=-1;
+      ctx.beginPath();
+      ctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${Math.max(.08,s.a)})`;
+      ctx.fill();
+    });
+    shoots = shoots.filter(s=>{
+      s.len += s.speed;
+      s.alpha = Math.max(0, 1 - s.len/s.maxLen);
+      if(s.alpha<=0) return false;
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.angle*Math.PI/180);
+      const g = ctx.createLinearGradient(0,0,s.len,0);
+      g.addColorStop(0,'transparent');
+      g.addColorStop(.3,`rgba(255,255,255,${s.alpha*.6})`);
+      g.addColorStop(1,'transparent');
+      ctx.strokeStyle=g; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(s.len,0); ctx.stroke();
+      ctx.restore();
+      return true;
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ═══════════════════════════════════════════════════
+//   GAME OCCULT DATABASE
+// ═══════════════════════════════════════════════════
+const GAME_DB = {
+  'ウマ娘':               { luckyDays:[3], luckyHours:[5,6,7,18,19], updateDay:3, updateHour:18, jinxes:['水曜18:00更新直後が最も熱い','朝5:00〜7:00に奇跡報告多数あり','満月の夜はSSR確率上昇の都市伝説'] },
+  'ブルーアーカイブ':      { luckyDays:[1], luckyHours:[2,3,4,11,22], updateDay:1, updateHour:11, jinxes:['月曜メンテナンス直後が狙い目','深夜2:00〜4:00の静寂ゾーン','ゾロ目時刻（11:11, 22:22）が激アツ'] },
+  '崩壊：スターレイル':    { luckyDays:[4], luckyHours:[6,7,8,18], updateDay:4, updateHour:18, jinxes:['木曜更新が基本サイクル','朝6:00〜8:00が最も出やすい','課金直後30分は避けるべし説'] },
+  'NIKKE':               { luckyDays:[5], luckyHours:[19,20,21], updateDay:5, updateHour:11, jinxes:['金曜夜のゴールデンタイム','19:00〜21:00が黄金帯','メンテ明け1時間以内が最強'] },
+  '原神':                { luckyDays:[2], luckyHours:[0,18,19,20], updateDay:2, updateHour:18, jinxes:['火曜18:00更新直後が勝負','更新から3時間以内が鉄板','深夜0:00ジャストは奇跡の時刻'] },
+  'Fate/GO':             { luckyDays:[3,6], luckyHours:[12,18,21], jinxes:['ピックアップ初日が最も熱い','21:00前後に爆死・爆当たり両方多数','0時回しは真偽不明の都市伝説'] },
+  'ゼンレスゾーンゼロ':    { luckyDays:[3,4], luckyHours:[11,18,19,20], updateDay:3, updateHour:11, jinxes:['水曜メンテ後が激アツ','18:00〜20:00のゴールデンタイム','11:11のゾロ目時刻が奇跡を呼ぶ'] },
+  'LINE MF':             { luckyDays:[2,5], luckyHours:[12,18,21,22], jinxes:['火・金更新直後','22:22のゾロ目が幸運の刻','深夜よりゴールデンタイム推奨'] },
+  'Echocalypse':         { luckyDays:[4,5], luckyHours:[0,6,7,18,19], jinxes:['木曜メンテ後1時間が最強','朝6:00〜7:00の早朝ゾーン','深夜0:00リセット直後'] },
+  'Evertale':            { luckyDays:[1,5], luckyHours:[3,12,18,21], jinxes:['月・金が狙い目の曜日','深夜3:00の魔の時間帯','18:00〜21:00が安定報告多数'] },
+  'Pokémon Trading Card Game Pocket': { luckyDays:[2,5], luckyHours:[7,8,12,18,19], updateDay:2, updateHour:7, jinxes:['朝7:00〜8:00のモーニングパック','火・金の新弾追加直後','12:00と18:00のデイリーリセット'] },
+  '鳴潮':               { luckyDays:[4], luckyHours:[6,11,18,19,20], updateDay:4, updateHour:11, jinxes:['木曜メンテ後が鉄板の狙い目','朝6:00の早朝ガチャ','18:00〜20:00ゴールデンタイム'] },
+  'プリコネR':           { luckyDays:[1,5], luckyHours:[5,12,18,19], updateDay:1, updateHour:5, jinxes:['月曜5:00ガチャ更新直後が最強','12:00と18:00のデイリーリセット','金曜夜は当たりが多い説'] },
+  'グラブル':            { luckyDays:[1,4], luckyHours:[12,17,19,22], updateDay:1, updateHour:12, jinxes:['月曜12:00レジェフェス開幕直後','17:00と19:00のマグナタイム','22:00の深夜ガチャは別格'] },
+  'アズールレーン':       { luckyDays:[4], luckyHours:[0,5,12,18], updateDay:4, updateHour:5, jinxes:['木曜メンテ明けが鉄板','深夜0:00デイリーリセット後','12:00昼休みガチャが安定'] },
+  'ヘブバン':            { luckyDays:[2,5], luckyHours:[11,15,18,21], updateDay:2, updateHour:15, jinxes:['火曜15:00更新直後が最強','18:00〜21:00ゴールデンタイム','金曜夜は当たりやすい説'] },
+  'DQウォーク':          { luckyDays:[1,5], luckyHours:[6,12,15,18], updateDay:5, updateHour:15, jinxes:['金曜15:00ガチャ更新','朝6:00の散歩ガチャ','12:00と18:00のデイリー更新後'] },
+  '白猫':               { luckyDays:[1,4], luckyHours:[12,15,18,21], updateDay:1, updateHour:15, jinxes:['月曜15:00ガチャ更新直後','12:00昼休みが鉄板','21:00夜のゴールデンタイム'] }
+};
+
+// ═══════════════════════════════════════════════════
+//   REAL DIVINATION ALGORITHMS
+// ═══════════════════════════════════════════════════
+
+/* ── 月齢計算（Meeus式近似） ── */
+function getMoonAge(date) {
+  const jd = (date / 86400000) + 2440587.5;
+  const T  = (jd - 2451545.0) / 36525;
+  const D  = 297.85036 + 445267.111480*T - 0.0019142*T*T + T*T*T/189474;
+  const M  = 357.52772 + 35999.050340*T - 0.0001603*T*T - T*T*T/300000;
+  const Mp = 93.27191  + 483202.017538*T - 0.0086972*T*T + T*T*T/56250;
+  const phase = ((D % 360) + 360) % 360;
+  const age   = Math.round(phase / 12.19);
+  return { age: Math.min(29, age), phase };
+}
+
+function getMoonPhaseInfo(age) {
+  if(age<=1||age>=28)  return { name:'新月',    icon:'🌑', power:'浄化・再生・新しい始まり', luckBonus:8 };
+  if(age<=7)           return { name:'三日月',   icon:'🌒', power:'成長・新規開始のエネルギー', luckBonus:5 };
+  if(age<=8)           return { name:'上弦の月', icon:'🌓', power:'行動・決断力の高まり', luckBonus:6 };
+  if(age<=13)          return { name:'十三夜',   icon:'🌔', power:'充実・達成への助走', luckBonus:9 };
+  if(age<=15)          return { name:'満月',     icon:'🌕', power:'最強の引き寄せ・感情の高まり', luckBonus:14 };
+  if(age<=22)          return { name:'下弦',     icon:'🌗', power:'手放し・整理のエネルギー', luckBonus:3 };
+  return                      { name:'晦日前',   icon:'🌘', power:'内省・準備の時', luckBonus:4 };
+}
+
+/* ── 九星気学（本命星・月命星）生年で計算 ── */
+function getKyusei(year, month, birthYear) {
+  // 本命星: 生年の桁和から計算（11から引く）
+  const byear = birthYear || year;
+  let sum = String(byear).split('').map(Number).reduce((a,b)=>a+b,0);
+  while (sum >= 10) sum = String(sum).split('').map(Number).reduce((a,b)=>a+b,0);
+  let honmei = 11 - sum;
+  if (honmei <= 0) honmei += 9;
+  if (honmei > 9)  honmei -= 9;
+  // 月命星: 今年の月命星
+  let msum = String(year).split('').map(Number).reduce((a,b)=>a+b,0);
+  while (msum >= 10) msum = String(msum).split('').map(Number).reduce((a,b)=>a+b,0);
+  let mbase = 11 - msum; if (mbase<=0) mbase+=9; if (mbase>9) mbase-=9;
+  // 月命星: 年本命から月オフセット（節月ベース）
+  const monthOffset = (month <= 1) ? month + 10 : month - 2; // 節月調整
+  const getukumei = ((mbase - 1 - monthOffset % 9) + 99) % 9 + 1;
+  const names = ['','一白水星','二黒土星','三碧木星','四緑木星','五黄土星','六白金星','七赤金星','八白土星','九紫火星'];
+  const luck  = [0,72,68,80,75,65,88,82,70,78];
+  return { honmei: names[honmei]||'', getukumei: names[getukumei]||'', score: luck[honmei]||70 };
+}
+
+/* ── 数秘術（ピタゴラス式 命数計算） ── */
+function calcLifePath(dateStr) {
+  if(!dateStr) return null;
+  let sum = dateStr.replace(/-/g,'').split('').reduce((a,c)=>a+parseInt(c),0);
+  while(sum>9 && sum!==11 && sum!==22 && sum!==33) {
+    sum = String(sum).split('').reduce((a,c)=>a+parseInt(c),0);
+  }
+  return sum;
+}
+
+const LIFEPATH_INFO = {
+  1:  { kw:'自立・先駆者',  msg:'命数1は太陽の力。リーダーとして引き寄せる才能が今日も輝く。直感を信じてガチャを引く瞬間が運命を開く。', bonus:4 },
+  2:  { kw:'協調・直感',   msg:'命数2は月の力。繊細な直感が勝負を分ける。静かな時間帯に引くことで縁が最大化する。', bonus:3 },
+  3:  { kw:'創造・表現',   msg:'命数3は木星の力。楽しい気持ちで引くこと自体が最強のおまじない。笑顔で臨むべし。', bonus:5 },
+  4:  { kw:'安定・基盤',   msg:'命数4は地の力。計画的に臨むことで確実に結果を引き寄せる。急がば回れの精神が吉。', bonus:2 },
+  5:  { kw:'変化・冒険',   msg:'命数5は水星の力。予想外のタイミングに奇跡が宿る。ルーティンを外した行動が運気を変える。', bonus:6 },
+  6:  { kw:'愛・調和',     msg:'命数6は金星の力。愛するキャラへの想いが最強の磁石。想いが強いほど引き寄せ力が増す。', bonus:5 },
+  7:  { kw:'探求・内省',   msg:'命数7は海王星の力。直感の声に耳を傾けて。「今だ」と感じた瞬間がゴールデンタイム。', bonus:4 },
+  8:  { kw:'豊かさ・力',   msg:'命数8は土星の力。強い意志が運命を動かす。確固たる覚悟で臨むほど星が応える。', bonus:7 },
+  9:  { kw:'完成・知恵',   msg:'命数9は火星の力。完成の数字が示す最終局面。積み重ねた縁が今こそ実を結ぶ時。', bonus:5 },
+  11: { kw:'直感・啓示',   msg:'マスターナンバー11。霊的感受性が最大。「引きたい」と思った瞬間にすでに縁は結ばれている。', bonus:9 },
+  22: { kw:'大建設者',     msg:'マスターナンバー22。夢を現実に変える力の数字。強く念じるだけで引き寄せの場が形成される。', bonus:11 },
+  33: { kw:'宇宙的愛',     msg:'マスターナンバー33。無条件の愛の数字。純粋な気持ちで臨む日は宇宙が味方する。', bonus:13 }
+};
+
+/* ── タロット大アルカナ（スコア加味） ── */
+const TAROT_MAJOR = [
+  { name:'愚者',      num:'0',  en:'The Fool',     score:72, msg:'新たな旅の始まりを告げる。恐れず飛び込む先に奇跡が待つ。' },
+  { name:'魔術師',    num:'I',  en:'The Magician',  score:88, msg:'全ての力が手中に揃った。今引けば望みは現実になる。' },
+  { name:'女教皇',    num:'II', en:'High Priestess',score:82, msg:'内なる知恵が囁く。直感に従えばタイミングは完璧。' },
+  { name:'女帝',      num:'III',en:'The Empress',   score:86, msg:'豊穣と創造のエネルギー。引き寄せ力が最高潮にある。' },
+  { name:'皇帝',      num:'IV', en:'The Emperor',   score:84, msg:'意志の強さが運命を制す。確固たる覚悟で挑め。' },
+  { name:'法王',      num:'V',  en:'The Hierophant',score:78, msg:'伝統と縁が結びつく。王道のタイミングに乗ること。' },
+  { name:'恋人',      num:'VI', en:'The Lovers',    score:91, msg:'強い縁が働いている。狙いのキャラとの絆は本物だ。' },
+  { name:'戦車',      num:'VII',en:'The Chariot',   score:87, msg:'前進あるのみ。迷いを捨てた瞬間に星が動く。' },
+  { name:'力',        num:'VIII',en:'Strength',     score:85, msg:'内なる勇気が鍵。静かな情熱が引き寄せを加速させる。' },
+  { name:'隠者',      num:'IX', en:'The Hermit',    score:73, msg:'準備期間。焦らず待てば好機は必ず巡ってくる。' },
+  { name:'運命の輪',  num:'X',  en:'Wheel of Fortune',score:89,msg:'運命が大きく動く。今が転換点。流れに乗れ。' },
+  { name:'正義',      num:'XI', en:'Justice',       score:79, msg:'バランスと公正。正しい時刻に引けば応報がある。' },
+  { name:'吊られた男',num:'XII',en:'The Hanged Man', score:68, msg:'視点を変える時。逆転の発想が新たな運を呼ぶ。' },
+  { name:'死神',      num:'XIII',en:'Death',        score:76, msg:'終わりは始まり。古い縁が切れ、新たな出会いが来る。' },
+  { name:'節制',      num:'XIV',en:'Temperance',    score:81, msg:'調和と中庸。急がない者に女神は微笑む。' },
+  { name:'悪魔',      num:'XV', en:'The Devil',     score:71, msg:'執着を解放せよ。欲望のままに動けば縁が離れる。' },
+  { name:'塔',        num:'XVI',en:'The Tower',     score:65, msg:'突破口が開く予兆。衝撃の後に真の幸運が訪れる。' },
+  { name:'星',        num:'XVII',en:'The Star',     score:92, msg:'最高の希望。宇宙が「引け」とサインを送っている。' },
+  { name:'月',        num:'XVIII',en:'The Moon',    score:77, msg:'霧の中でも直感が光る。感じるままに動くことが正解。' },
+  { name:'太陽',      num:'XIX',en:'The Sun',       score:95, msg:'最強の祝福。今日は何をしても吉。迷わず引くべき日。' },
+  { name:'審判',      num:'XX', en:'Judgement',     score:83, msg:'目覚めの時。過去の縁が今甦る。新章の幕開け。' },
+  { name:'世界',      num:'XXI',en:'The World',     score:93, msg:'完成と達成。全ての準備が整った。今こそが運命の時刻。' },
+];
+
+/* ── 西洋占星術（惑星配置近似） ── */
+const ZODIAC_ELEMENT = {
+  '牡羊座':'火','獅子座':'火','射手座':'火',
+  '牡牛座':'地','乙女座':'地','山羊座':'地',
+  '双子座':'風','天秤座':'風','水瓶座':'風',
+  '蟹座':'水','蠍座':'水','魚座':'水'
+};
+const ZODIAC_SCORE = {
+  '牡羊座':86,'牡牛座':79,'双子座':83,'蟹座':78,
+  '獅子座':89,'乙女座':81,'天秤座':84,'蠍座':87,
+  '射手座':88,'山羊座':80,'水瓶座':85,'魚座':82
+};
+const ZODIAC_MSG = {
+  '牡羊座':'火のエレメント全開。行動力と決断力が最大化。「引きたい」と思った瞬間が勝負。',
+  '牡牛座':'地のエネルギーが安定を呼ぶ。腰を据えた計画的な引き方が大吉を引き寄せる。',
+  '双子座':'風の知恵が直感を研ぎ澄ます。複数の候補時刻を試す柔軟戦術が吉。',
+  '蟹座':'月の子よ、感情の潮が最高潮の時が来ている。胸が熱くなった瞬間に引け。',
+  '獅子座':'太陽の申し子。自信に満ちた覇気がSSRを呼び込む。王者として挑め。',
+  '乙女座':'細部への注意力がラッキータイムの精度を高める。分析した最適時刻を逃すな。',
+  '天秤座':'金星の愛が引き寄せ力を最大化。美しいと感じた瞬間が最強のタイミング。',
+  '蠍座':'冥王星の深き力。執念と情熱が運命を動かす。一度決めたら揺らがず引け。',
+  '射手座':'木星の幸運が降り注ぐ日。楽観と直感を全解放すれば奇跡は必然になる。',
+  '山羊座':'土星の積み重ねが実る時。計画と実行の一致が大当たりへの最短路。',
+  '水瓶座':'天王星の閃きが炸裂する。常識を破った意外な時刻が真のゴールデンタイム。',
+  '魚座':'海王星の霊感が宿る。夢とも覚醒ともつかない境界線の時刻に奇跡が起きる。'
+};
+
+/* ── 六曜計算 ── */
+/* 旧暦変換（六曜計算用）
+   基準: 2026/2/17 = 春節 = 旧暦丙午年 正月1日 */
+function getLunarMonthDay(date) {
+  const REF = new Date(2026, 1, 17);
+  const MONTH_DAYS = [30,29,30,30,29,30,29,30,29,30,30,29];
+  const diff = Math.floor((date - REF) / 86400000); // floorで時刻ズレ防止
+  let m = 1, d = 1 + diff;
+  if (d >= 1) {
+    while (true) { const len = MONTH_DAYS[(m-1)%12]; if(d<=len)break; d-=len; m++; }
+  } else {
+    while (d<=0) { m--; if(m<=0)m+=12; d+=MONTH_DAYS[(m-1)%12]; }
+  }
+  return [m, d];
+}
+function getRokuyo(date) {
+  const [monthLunar, dayLunar] = getLunarMonthDay(new Date(date));
+  const idx = ((monthLunar + dayLunar) % 6 + 6) % 6;
+  const items = [
+    { name:'大安', icon:'◎', msg:'万事に最吉。ガチャに全力投球できる日。', bonus:10 },
+    { name:'赤口', icon:'△', msg:'正午前後のみ吉。11:30〜12:30が狙い目。', bonus:-4 },
+    { name:'先勝', icon:'○', msg:'午前中が吉、午後は凶。AM中に引くべし。', bonus:5 },
+    { name:'友引', icon:'○', msg:'勝負事に凶。ただし友を引き込む縁は強い。', bonus:3 },
+    { name:'先負', icon:'△', msg:'午後から吉転換。15:00以降のガチャが◎。', bonus:2 },
+    { name:'仏滅', icon:'✕', msg:'全てが凶。本日は石の温存を推奨。', bonus:-8 }
+  ];
+  return items[idx];
+}
+
+/* ── 四柱推命 天干地支（今日の日柱・月柱を正確に計算） ── */
+const STEMS   = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const BRANCHES= ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+function getShichu(birthdate) {
+  const now = new Date(); // 今日の日柱・月柱
+  const yr  = now.getFullYear();
+  const mo  = now.getMonth();  // 0-indexed
+  const day = now.getDate();
+
+  // ── 年柱（今年）──
+  const yearStemIdx   = (yr - 1924) % 10;
+  const yearBranchIdx = ((yr - 1924) % 12 + 12) % 12;
+
+  // ── 月柱（節気考慮）──
+  // 節入り日（概算）: 各月の節気が来る日
+  const SETSU = [6, 4, 6, 5, 6, 6, 7, 8, 8, 8, 8, 7];
+  // 節気後かどうかで当月 or 前月を使用
+  const adjustedMo = day >= SETSU[mo] ? mo : (mo - 1 + 12) % 12;
+  const lunarMonthIdx = (adjustedMo - 1 + 12) % 12; // 寅月=0, 卯月=1...
+  // 年干に対応する寅月の月干: 甲己→丙(2), 乙庚→戊(4), 丙辛→庚(6), 丁壬→壬(8), 戊癸→甲(0)
+  const monthStemIdx   = (yearStemIdx % 5 * 2 + 2 + lunarMonthIdx) % 10;
+  const monthBranchIdx = (lunarMonthIdx + 2) % 12; // 寅=2, 卯=3...
+
+  // ── 日柱（今日）──
+  // 基準: 2026/2/20 = 乙丑 → epochDays=20504, stemOff=7, brOff=5
+  const epochDays = Math.floor(now.getTime() / 86400000);
+  const dayStemIdx   = (epochDays + 7) % 10;
+  const dayBranchIdx = (epochDays + 5) % 12;
+
+  const ELEM_MAP = ['木','木','火','火','土','土','金','金','水','水'];
+  const dayElem  = ELEM_MAP[dayStemIdx];
+  const ELEM_MSG = {木:'成長と発展',火:'情熱と行動',土:'安定と収穫',金:'権威と豊かさ',水:'流れと知恵'};
+  return {
+    yearPillar:  STEMS[yearStemIdx]+BRANCHES[yearBranchIdx],
+    monthPillar: STEMS[monthStemIdx]+BRANCHES[monthBranchIdx],
+    dayPillar:   STEMS[dayStemIdx]+BRANCHES[dayBranchIdx],
+    dayElement:  dayElem,
+    dayMessage:  ELEM_MSG[dayElem] || '変化'
+  };
+}
+
+/* ── seededRandom（日付固定乱数） ── */
+function seededRand(seed) {
+  let x = Math.sin(seed+1)*73856.793;
+  return x - Math.floor(x);
+}
+
+// ═══════════════════════════════════════════════════
+//   MAIN FORTUNE CALCULATOR
+// ═══════════════════════════════════════════════════
+function calculateFortune(params) {
+  const { gameTitle, targetName, gachaTitle, gachaDeadline, gachaDeadlineTime, birthdate, zodiac, bloodType, eto } = params;
+  const now    = new Date();
+  const month  = now.getMonth() + 1;
+  const year   = now.getFullYear();
+
+  // ── キャッシュ確認 ──
+  const cacheKey = `${gameTitle}|${targetName}|${gachaTitle}|${gachaDeadline}`;
+  const cachedRaw = localStorage.getItem('gachaOracle_result');
+  const cachedKey = localStorage.getItem('gachaOracle_key');
+  if (cachedRaw && cachedKey === cacheKey) {
+    try { return JSON.parse(cachedRaw); } catch(e){}
+  }
+
+  // ── 月齢 ──
+  const moonData  = getMoonAge(now.getTime());
+  const moonPhase = getMoonPhaseInfo(moonData.age);
+
+  // ── 九星気学 ──
+  const birthYear = birthdate ? parseInt(birthdate.split('-')[0]) : null;
+  const kyusei = getKyusei(year, month, birthYear);
+
+  // ── 六曜 ──
+  const rokuyo = getRokuyo(now);
+
+  // ── 数秘術 ──
+  const lifePath  = calcLifePath(birthdate);
+  const lpInfo    = LIFEPATH_INFO[lifePath] || null;
+
+  // ── 四柱推命 ──
+  const shichu = birthdate ? getShichu(birthdate) : null;
+
+  // ── タロット（日付シード） ──
+  const dateSeed  = year * 10000 + month * 100 + now.getDate();
+  const tarotIdx  = Math.floor(seededRand(dateSeed) * TAROT_MAJOR.length);
+  const tarot     = TAROT_MAJOR[tarotIdx];
+
+  // ── スコア計算 ── 完全再設計
+  let score = 60; // ベース
+
+  // 月齢補正（最大+14）
+  score += moonPhase.luckBonus;
+
+  // 六曜補正
+  score += rokuyo.bonus;
+
+  // 九星気学補正（-100からのスケーリング）
+  score += Math.round((kyusei.score - 75) / 4);
+
+  // タロット補正
+  score += Math.round((tarot.score - 80) / 5);
+
+  // 星座補正
+  if(zodiac) score += Math.round((ZODIAC_SCORE[zodiac]||80) - 80) / 4;
+
+  // 血液型補正
+  const bloodBonus = {'A型':2,'B型':4,'O型':3,'AB型':5};
+  if(bloodType) score += bloodBonus[bloodType]||0;
+
+  // 数秘術補正
+  if(lpInfo) score += Math.round(lpInfo.bonus / 2);
+
+  // 生年月日日にち補正
+  if(birthdate) {
+    const bd = new Date(birthdate);
+    score += (bd.getDate() % 7);
+  }
+
+  // 干支補正
+  const etoBonus={'子':3,'丑':1,'寅':4,'卯':3,'辰':5,'巳':2,'午':4,'未':3,'申':2,'酉':5,'戌':3,'亥':2};
+  if(eto) score += etoBonus[eto]||0;
+
+  // キャラ名補正
+  if(targetName) score += Math.min(6, targetName.length % 5 + 2);
+
+  // ガチャタイトル補正
+  if(gachaTitle) score += 3;
+
+  // ゲーム固有データ補正
+  const gdb = GAME_DB[gameTitle];
+  if(gdb) score += 3;
+
+  // クランプ
+  score = Math.max(52, Math.min(99, Math.round(score)));
+
+  // ── ラッキータイム生成 ──
+  const luckyTimes = generateLuckyTimes({ month, score, targetName, gachaDeadline, gachaDeadlineTime, gameTitle, moonPhase, rokuyo, now });
+
+  // ── 占術別解説 ──
+  const divinations = buildDivinations({ gameTitle, targetName, gachaTitle, zodiac, bloodType, eto, score, moonPhase, kyusei, tarot, lifePath, lpInfo, shichu, rokuyo });
+
+  // ── 推奨ガチャ回数 ──
+  const pulls = calcPulls(score, targetName);
+
+  // ── ラッキーアクション ──
+  const actions = buildActions(score, targetName, gachaTitle, tarot, moonPhase);
+
+  const result = { gameTitle, targetName, gachaTitle, gachaDeadline, gachaDeadlineTime, score, pulls, luckyTimes, divinations, actions, moonPhase, kyusei, tarot, rokuyo, lifePath, shichu };
+
+  localStorage.setItem('gachaOracle_result', JSON.stringify(result));
+  localStorage.setItem('gachaOracle_key',    cacheKey);
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
+//   LUCKY TIMES GENERATOR
+// ═══════════════════════════════════════════════════
+function generateLuckyTimes({ month, score, targetName, gachaDeadline, gachaDeadlineTime, gameTitle, moonPhase, rokuyo, now }) {
+  const times = [];
+  const gdb   = GAME_DB[gameTitle] || {};
+  const LUCKY_MINS = [7,11,17,22,27,33,37,44,47,55];
+
+  function selectHour(rank) {
+    if(gdb.luckyHours && gdb.luckyHours.length > 0) {
+      return gdb.luckyHours[rank % gdb.luckyHours.length];
+    }
+    const defaultHours = [7,12,18,21,0];
+    return defaultHours[rank % defaultHours.length];
+  }
+
+  function calcPinpoint(h, rank) {
+    const m = (h===11||h===22) ? h : LUCKY_MINS[rank % LUCKY_MINS.length];
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+
+  function timeScore(baseScore, rank) {
+    const penalty = [0,-3,-6,-9,-12];
+    let s = baseScore + (penalty[rank]||0);
+    if(rank===0) s += moonPhase.luckBonus;
+    if(targetName && rank===0) s += 4;
+    return Math.max(40, Math.min(99, s));
+  }
+
+  function tenPulls(s, rank) {
+    if(rank===0 && s>=90) return 3;
+    if(rank===0 && s>=80) return 2;
+    if(rank===1 && s>=85) return 2;
+    return (rank<=2) ? 2 : 1;
+  }
+
+  function buildEntry(date, rank, hour, passed=false, urgent=false) {
+    const endH = (hour + 2) % 24;
+    const m = date.getMonth()+1, d = date.getDate();
+    const ts = timeScore(score, rank);
+    return {
+      rank: rank+1,
+      date: `${m}月${d}日`,
+      weekday: ['日','月','火','水','木','金','土'][date.getDay()],
+      time: `${String(hour).padStart(2,'0')}:00 〜 ${String(endH).padStart(2,'0')}:00`,
+      pinpoint: calcPinpoint(hour, rank),
+      score: ts,
+      tenPulls: tenPulls(ts, rank),
+      special: Boolean(targetName && rank===0),
+      urgent, passed,
+      isLuckyDay: gdb.luckyDays ? gdb.luckyDays.includes(date.getDay()) : false
+    };
+  }
+
+  if(!gachaDeadline) {
+    for(let i=0;i<5;i++) {
+      let tgt = new Date(now);
+      tgt.setDate(tgt.getDate() + i + 1);
+      if(gdb.luckyDays && i<2) tgt = nearestLucky(tgt, gdb.luckyDays, null) || tgt;
+      const h = selectHour(i);
+      times.push(buildEntry(tgt, i, h, false, i===0));
+    }
+    return times;
+  }
+
+  let dl = new Date(gachaDeadline);
+  if(gachaDeadlineTime) {
+    const [hh,mm] = gachaDeadlineTime.split(':');
+    dl.setHours(+hh, +mm, 0, 0);
+  } else {
+    dl.setHours(23,59,59,999);
+  }
+
+  const diffMs   = dl - now;
+  const diffHrs  = diffMs / 3600000;
+  const diffDays = diffMs / 86400000;
+
+  if(diffHrs <= 0) {
+    for(let i=0;i<5;i++) {
+      const tgt = new Date(now); tgt.setHours(now.getHours()+i+1);
+      times.push(buildEntry(tgt, i, tgt.getHours(), false, true));
+    }
+  } else if(diffHrs <= 24) {
+    const step = Math.max(1, Math.floor(diffHrs/5));
+    for(let i=0;i<5;i++) {
+      const tgt = new Date(now.getTime() + (step*i+1)*3600000);
+      if(tgt > dl) break;
+      times.push(buildEntry(tgt, i, tgt.getHours(), false, i===0));
+    }
+  } else {
+    const step = Math.max(1, Math.floor(diffDays/5));
+    for(let i=0;i<5;i++) {
+      let tgt = new Date(now);
+      tgt.setDate(tgt.getDate() + step*i + 1);
+      if(gdb.luckyDays && i<2) tgt = nearestLucky(tgt, gdb.luckyDays, dl) || tgt;
+      if(tgt > dl) { tgt = new Date(dl); tgt.setHours(tgt.getHours() - i); }
+      if(tgt < now) { tgt = new Date(now); tgt.setHours(now.getHours()+i+1); }
+      const h = selectHour(i);
+      times.push(buildEntry(tgt, i, h));
+    }
+  }
+  return times;
+}
+
+function nearestLucky(from, luckyDays, deadline) {
+  for(let offset=0; offset<7; offset++) {
+    const t = new Date(from); t.setDate(t.getDate()+offset);
+    if(deadline && t > deadline) break;
+    if(luckyDays.includes(t.getDay())) return t;
+  }
+  return from;
+}
+
+function calcPulls(score, targetName) {
+  let ten = score>=90?3:score>=80?2:1;
+  if(targetName) ten = Math.min(5, ten+1);
+  const single = score>=85?2:score>=75?1:0;
+  return { ten, single, total: ten*10+single };
+}
+
+// ═══════════════════════════════════════════════════
+//   DIVINATION BUILDER
+// ═══════════════════════════════════════════════════
+function buildDivinations({ gameTitle, targetName, gachaTitle, zodiac, bloodType, eto, score, moonPhase, kyusei, tarot, lifePath, lpInfo, shichu, rokuyo }) {
+  const divs = [];
+  const targetRef = targetName ? `「${targetName}」` : 'あなたの望むもの';
+  const gachaRef  = gachaTitle  ? `「${gachaTitle}」の` : '';
+
+  // 1. 西洋占星術
+  const zMsg = zodiac ? ZODIAC_MSG[zodiac] : '星座情報がないため汎用占断を行う。木星が全体運を底上げしている。';
+  const zElem = zodiac ? ZODIAC_ELEMENT[zodiac] : '';
+  const elemGacha = { '火':'情熱的な直感の一瞬に引け','地':'計画と分析で最適時刻を選べ','風':'軽やかな気持ちで複数回試みよ','水':'感情の潮が引く夜明け前が最強' };
+  divs.push({
+    icon:'🌟', name:'西洋占星術', score: zodiac ? ZODIAC_SCORE[zodiac] : 80,
+    color:'rgba(255,200,80,.7)',
+    body: `${zodiac||'星座不明'}の方へ。${zMsg}${targetName?` — ${targetRef}との縁は確かに結ばれつつある。`:''} ${zElem ? elemGacha[zElem]+'。':''}第1候補時刻が霊的共鳴の最高点。`
+  });
+
+  // 2. 月齢占術
+  divs.push({
+    icon:moonPhase.icon, name:'月齢占術', score: 60 + moonPhase.luckBonus,
+    color:'rgba(180,140,255,.7)',
+    body: `現在は【${moonPhase.name}（月齢${getMoonAge(new Date().getTime()).age}）】。${moonPhase.power}が最大化している時。${moonPhase.luckBonus>=10?`満月に近い今、引き寄せの力は年間で最強クラス。${gachaRef}ガチャに全力を注ぐべき吉機。`:`月のエネルギーが${targetRef}との縁を引き寄せつつある。ラッキータイムに合わせることで月の加護を最大化できる。`}`
+  });
+
+  // 3. 九星気学
+  divs.push({
+    icon:'☯️', name:'九星気学', score: kyusei.score,
+    color:'rgba(80,200,160,.7)',
+    body: `本命星【${kyusei.honmei}】、月命星【${kyusei.getukumei}】。${kyusei.score>=85?`今月は本命星と月命星が最高の相性を持つ時期。吉方位のエネルギーが${gameTitle}の運気を増幅している。`:`今月の気の流れは安定しており、着実な引き方が吉。`} ${targetRef}を引き当てるための星の配置が整っている。`
+  });
+
+  // 4. タロット
+  divs.push({
+    icon:'🎴', name:'タロット占い', score: tarot.score,
+    color:'rgba(255,120,150,.7)',
+    body: `本日のカード：【${tarot.name} ${tarot.num} / ${tarot.en}】。${tarot.msg}${targetName?` — ${targetRef}との縁を示すカードが今日という日に出たのは偶然ではない。`:''} ${gachaTitle?`「${gachaTitle}」の期間中、このカードが守護している。`:''}`
+  });
+
+  // 5. 数秘術（命数）
+  if(lpInfo) {
+    divs.push({
+      icon:'🔢', name:'数秘術（命数）', score: 70 + Math.round(lpInfo.bonus * 1.5),
+      color:'rgba(80,180,255,.7)',
+      body: `命数【${lifePath}】：${lpInfo.kw}の数字。${lpInfo.msg}${targetName?` — ${targetRef}の名前に宿るエネルギーと命数${lifePath}が共鳴している。`:''}`
+    });
+  } else {
+    divs.push({
+      icon:'🔢', name:'数秘術（命数）', score: 76,
+      color:'rgba(80,180,255,.7)',
+      body: `生年月日の入力で命数を算出できる。数秘術は最も古い引き寄せの術のひとつ。本日のラッキーナンバーは${[3,7,8,11,22][Math.floor(seededRand(new Date().getDate())*5)]}。この数字を意識した時刻に引くと吉。`
+    });
+  }
+
+  // 6. 四柱推命
+  if(shichu) {
+    const elemMsgMap = { 木:'成長と発展の気が日柱に宿る', 火:'情熱と行動力が最大化される日', 土:'安定と収穫の気が満ちる', 金:'権威と金運が輝く吉日', 水:'流れと直感が冴え渡る日' };
+    divs.push({
+      icon:'📿', name:'四柱推命', score: 78,
+      color:'rgba(255,165,80,.7)',
+      body: `日柱【${shichu.dayPillar}】、月柱【${shichu.monthPillar}】。${elemMsgMap[shichu.dayElement]||'変化の気が流れる'}。${shichu.dayElement}の気が${gameTitle}の運気と調和している。${targetRef}を引くには「${shichu.dayElement}」のエネルギーを意識すること。`
+    });
+  }
+
+  // 7. 六曜
+  divs.push({
+    icon:'📅', name:'六曜', score: 70 + rokuyo.bonus,
+    color:'rgba(200,160,255,.7)',
+    body: `本日の六曜は【${rokuyo.name}】${rokuyo.icon}。${rokuyo.msg}${rokuyo.bonus>=5?` — 今日は最高の吉日。全てのガチャ行動に追い風が吹いている。`:`ラッキータイムの時刻に絞って挑戦することで六曜の恩恵を最大化できる。`}`
+  });
+
+  // 8. 血液型
+  const bMap = {
+    'A型': `几帳面な性格が最適タイミングの選定に最大の武器となる。計画通りの時刻に引くことで高レアが引き当たりやすい。`,
+    'B型': `直感力が際立って冴えている。「今だ！」と感じた瞬間がベストタイミング。迷わず引け。`,
+    'O型': `大胆さが天の恵みを呼ぶ。思い切りが良ければ良いほど、星が応えてくれる。`,
+    'AB型': `独自の感性が武器。他者が引かない時間帯・方法に隠された黄金ルートがある。`
+  };
+  const bMsg = bloodType ? `${bloodType}の方は、${bMap[bloodType]}` : '血液型情報があれば、さらに詳細な鑑定が可能。血液型はガチャ運の重要なファクター。';
+  divs.push({ icon:'🩸', name:'血液型占い', score: bloodType?80:70, color:'rgba(255,100,100,.7)', body: bMsg });
+
+  // 9. 干支運気
+  const etoMap = {
+    子:'子年は水の気を持ち、適応力と直感力が最大化。',丑:'丑年は地の安定を持ち、粘り強い引き方が吉。',
+    寅:'寅年は木の勢いを持ち、果敢な挑戦が運を呼ぶ。',卯:'卯年は木の柔軟を持ち、春の風のように引くべし。',
+    辰:'辰年は土の権威を持ち、最強クラスのガチャ運を誇る。',巳:'巳年は火の知恵を持ち、深い洞察が好機を導く。',
+    午:'午年は火の行動を持ち、最高の直感が宿る干支。',未:'未年は土の創造を持ち、芸術的感性がSSRを呼ぶ。',
+    申:'申年は金の知性を持ち、分析的アプローチが吉。',酉:'酉年は金の収穫を持ち、桃花運と財運が今月最高潮。',
+    戌:'戌年は土の誠実を持ち、一途な想いがキャラとの縁を結ぶ。',亥:'亥年は水の勇気を持ち、臆せず引いた者に奇跡が宿る。'
+  };
+  const etoMsg = eto ? `【${eto}年】の方は、${etoMap[eto]||''} ${targetName?`${targetRef}との縁は天が定めたものである。`:''}`
+                     : '干支情報があれば東洋霊気との共鳴を精密測定できる。十二支それぞれが固有のガチャエネルギーを持つ。';
+  divs.push({ icon:'🐉', name:'東洋占術（干支）', score: eto?85:72, color:'rgba(100,220,180,.7)', body: etoMsg });
+
+  return divs;
+}
+
+// ═══════════════════════════════════════════════════
+//   LUCKY ACTIONS
+// ═══════════════════════════════════════════════════
+function buildActions(score, targetName, gachaTitle, tarot, moonPhase) {
+  const base = [
+    'ガチャを引く直前に北の方角を向いて深呼吸3回。邪気を払い気を整える。',
+    'スマホ画面を柔らかい布で丁寧に拭く。運気の通り道を物理的に清める。',
+    '水を一口飲んで、体内の気を浄化してから臨む。',
+    '「ありがとう」を3回心の中で唱える。感謝の波動が引き寄せを加速させる。',
+  ];
+  if(score>=85) base.push(`最強運気到達。${tarot.name}のカードが示す通り今日は何も恐れなくてよい。自信を持って引け。`);
+  if(moonPhase.luckBonus>=10) base.push(`${moonPhase.icon}${moonPhase.name}の今夜は年間最強クラスの引き寄せ力。窓の外の月に向かって「お願いします」と念じてから引くこと。`);
+  if(targetName) {
+    base.push(`「${targetName}」の名前を7回、低い声でゆっくり唱えてから引く。名は体を表し、体は縁を引き寄せる。`);
+    base.push(`「${targetName}」のキャラ画像を1分間見つめ、イメージを焼き付けてからガチャ画面へ。視覚的引き寄せが効果を高める。`);
+  }
+  if(gachaTitle) base.push(`「${gachaTitle}」のバナー画像を一度閉じて、再度開いた瞬間に引く。再起動で気が一新される。`);
+  base.push(`引く直前にスマホの充電を確認。電池残量が30%以上あることが運気安定の条件。`);
+  return base;
+}
+
+// ═══════════════════════════════════════════════════
+//   DISPLAY
+// ═══════════════════════════════════════════════════
+function displayResult(result) {
+  const { score, gameTitle, targetName, gachaTitle, gachaDeadline, gachaDeadlineTime, luckyTimes, divinations, actions, moonPhase, kyusei, tarot, rokuyo, pulls } = result;
+
+  // verdict
+  const verdicts = [
+    { min:90, label:'大吉 ✦ 最強開運', color:'#EDD070', borderColor:'rgba(237,208,112,.45)' },
+    { min:80, label:'中吉 ✦ 好運気',   color:'#A78BFA', borderColor:'rgba(167,139,250,.4)' },
+    { min:70, label:'吉 ✦ 良き流れ',   color:'#34D399', borderColor:'rgba(52,211,153,.35)' },
+    { min:60, label:'小吉 ✦ 安定',      color:'#38BDF8', borderColor:'rgba(56,189,248,.3)' },
+    { min: 0, label:'末吉 ✦ 慎重に',   color:'#94A3B8', borderColor:'rgba(148,163,184,.25)' }
+  ];
+  const verd = verdicts.find(v=>score>=v.min) || verdicts[verdicts.length-1];
+
+  // score ring arc
+  const C = 2*Math.PI*72;
+  const arc = C * (score/100);
+  const gap = C - arc;
+  const stopColor1 = score>=80?'#A78BFA':'#38BDF8';
+
+  let html = `
+  <div class="glass score-hero">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 160 160">
+        <defs>
+          <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="${stopColor1}"/>
+            <stop offset="100%" stop-color="#C9A84C"/>
+          </linearGradient>
+        </defs>
+        <circle cx="80" cy="80" r="72" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="10"/>
+        <circle cx="80" cy="80" r="72" fill="none" stroke="url(#rg)" stroke-width="10"
+          stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-linecap="round"/>
+      </svg>
+      <div class="ring-inner">
+        <div class="score-num">${score}</div>
+        <div class="score-lbl">LUCKY</div>
+      </div>
+    </div>
+    <div class="verdict-badge" style="color:${verd.color};border-color:${verd.borderColor}">${verd.label}</div><br>
+    <div class="game-title-disp">${gameTitle}</div>
+    ${gachaTitle ? `<div style="font-size:.82rem;color:var(--iris-l);margin:4px 0">📋 ${gachaTitle}</div>` : ''}
+    ${gachaDeadline ? `<div style="font-size:.78rem;color:var(--danger);margin-top:4px">⏰ 期限: ${new Date(gachaDeadline).getMonth()+1}月${new Date(gachaDeadline).getDate()}日 ${gachaDeadlineTime||'23:59'}まで</div>` : ''}
+    ${targetName ? `<div class="target-disp">✦ 狙い: ${targetName}</div>` : ''}
+    <div class="lunar-chip">
+      <span>${moonPhase.icon}</span>
+      <span>月齢 ${getMoonAge(new Date().getTime()).age}日</span>
+      <span class="lc-name">${moonPhase.name}</span>
+      <span>${moonPhase.power}</span>
+    </div>
+    <div style="margin-top:12px;font-size:.78rem;color:var(--muted)">
+      六曜: <strong style="color:${rokuyo.bonus>=5?'var(--gold)':rokuyo.bonus<0?'var(--danger)':'var(--text)'}">${rokuyo.name}</strong>
+      &emsp;今日のタロット: <strong style="color:var(--iris-l)">${tarot.name}</strong>
+      &emsp;九星: <strong style="color:var(--text)">${kyusei.honmei}</strong>
+    </div>
+  </div>`;
+
+  // lucky times
+  html += `<p class="times-heading">✦ 最適ガチャ時刻 TOP ${luckyTimes.length} ✦</p>`;
+  luckyTimes.forEach((t,i) => {
+    const cls = i===0?'r1':i===1?'r2':i===2?'r3':'rlo';
+    const barColor = t.score>=80?'var(--gold)':t.score>=70?'var(--iris-l)':'var(--ice)';
+    html += `
+    <div class="tc ${cls}${t.expired?' expired':''}">
+      <span class="tc-rank-num">第${t.rank}候補</span>
+      <div class="tc-top">
+        <span class="tc-date">${t.date}（${t.weekday}）</span>
+        <span class="tc-time">${t.time}</span>
+        ${t.isLuckyDay?`<span class="badge b-special">★ラッキーデー</span>`:''}
+        ${t.urgent?`<span class="badge b-urgent">🔥緊急</span>`:''}
+        ${t.special?`<span class="badge b-special">✨特別</span>`:''}
+        ${t.expired?`<span class="badge b-done">終了</span>`:''}
+      </div>
+      <div class="tc-pinpoint">🎯 激アツ時刻: ${t.pinpoint}</div>
+      <div class="tc-bot">
+        <div class="tc-pulls">💎 推奨 <strong>${t.tenPulls}</strong>連×10</div>
+        <div style="font-size:.7rem;color:var(--muted)">運気 ${t.score}pt</div>
+        <div class="tc-bar">
+          <div class="tc-bar-fill" style="width:${t.score}%;background:${barColor}"></div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // game occult
+  const gdb = GAME_DB[gameTitle];
+  if(gdb) {
+    const icons = ['⚡','🌟','💎','🔥','✨'];
+    html += `
+    <div class="glass" style="margin-top:8px">
+      <p class="sec-title">🎮 ${gameTitle} オカルト情報</p>
+      <div class="occult-box">
+        <p class="occult-title">PLAYER FOLKLORE DATABASE</p>
+        <p class="occult-sub">プレイヤー間で語り継がれる都市伝説・ジンクス集</p>
+        ${gdb.jinxes.map((j,i)=>`<div class="jinx"><span class="jinx-ic">${icons[i%icons.length]}</span>${j}</div>`).join('')}
+        <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-top:12px;padding:10px;background:rgba(201,168,76,.06);border-radius:8px">
+          💡 上記ジンクスは占星術と組み合わせ、候補時刻の選定に反映済
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // divinations
+  html += `
+  <div class="glass" style="margin-top:8px">
+    <p class="sec-title">全占術 詳細鑑定</p>
+    <div class="div-grid">`;
+
+  divinations.forEach(d => {
+    const pct = Math.min(100, d.score);
+    html += `
+    <div class="div-card">
+      <div class="div-hdr">
+        <span class="div-icon">${d.icon}</span>
+        <span class="div-name">${d.name}</span>
+        <span class="div-score">${d.score}pt</span>
+      </div>
+      <div class="div-bar"><div class="div-bar-fill" style="width:${pct}%;background:${d.color}"></div></div>
+      <p class="div-body">${d.body}</p>
+    </div>`;
+  });
+
+  html += `</div></div>`;
+
+  // lucky actions
+  html += `
+  <div class="glass" style="margin-top:8px">
+    <p class="sec-title">✨ ガチャ前ラッキーアクション</p>
+    <ul class="action-list">
+      ${actions.map((a,i)=>`
+      <li class="action-item">
+        <span class="action-num">${i+1}</span>
+        <span>${a}</span>
+      </li>`).join('')}
+    </ul>
+  </div>`;
+
+  // pull summary
+  html += `
+  <div class="glass" style="background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.22);margin-top:8px;text-align:center">
+    <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.18em;color:var(--gold);margin-bottom:18px;text-transform:uppercase">推奨ガチャ回数（本日全体）</div>
+    <div style="display:flex;justify-content:center;gap:28px;flex-wrap:wrap">
+      <div><div style="font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold-l)">${pulls.ten}</div><div style="font-size:.7rem;color:var(--muted)">10連 推奨回数</div></div>
+      <div><div style="font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--iris-l)">${pulls.single}</div><div style="font-size:.7rem;color:var(--muted)">単発 推奨回数</div></div>
+      <div><div style="font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--text)">${pulls.total}</div><div style="font-size:.7rem;color:var(--muted)">合計引き数</div></div>
+    </div>
+  </div>`;
+
+  // buttons
+  html += `
+  <button class="dl-btn" onclick="downloadImage()">📸 結果を画像でダウンロード</button>
+  <button class="rst-btn" onclick="resetFortune()">🔄 リセット — 新しく占い直す</button>`;
+
+  document.getElementById('result').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+//   IMAGE DOWNLOAD (Canvas)
+// ═══════════════════════════════════════════════════
+function downloadImage() {
+  const raw = localStorage.getItem('gachaOracle_result');
+  if(!raw) { alert('占い結果がありません。'); return; }
+  const r   = JSON.parse(raw);
+  const cv  = document.createElement('canvas');
+  cv.width  = 1080;
+  cv.height = 320 + r.luckyTimes.length * 210;
+  const ctx = cv.getContext('2d');
+
+  // bg
+  const bg = ctx.createLinearGradient(0,0,0,cv.height);
+  bg.addColorStop(0,'#07040E'); bg.addColorStop(1,'#160C2E');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,cv.width,cv.height);
+
+  // gold border top
+  const gb = ctx.createLinearGradient(0,0,cv.width,0);
+  gb.addColorStop(0,'transparent'); gb.addColorStop(.3,'#A78BFA'); gb.addColorStop(.6,'#C9A84C'); gb.addColorStop(1,'transparent');
+  ctx.fillStyle = gb; ctx.fillRect(0,0,cv.width,3);
+
+  // title
+  ctx.textAlign='center';
+  ctx.fillStyle='#C9A84C'; ctx.font='bold 36px serif';
+  ctx.fillText('🔮 GACHA ORACLE 霊眼統合占術', cv.width/2, 60);
+
+  ctx.fillStyle='#EDE6F5'; ctx.font='bold 28px serif';
+  ctx.fillText(r.gameTitle + (r.gachaTitle?` — ${r.gachaTitle}`:''), cv.width/2, 105);
+
+  if(r.targetName) { ctx.fillStyle='#C9A84C'; ctx.font='22px serif'; ctx.fillText(`✦ 狙い: ${r.targetName}`, cv.width/2, 140); }
+
+  ctx.fillStyle='#A78BFA'; ctx.font='bold 26px serif';
+  ctx.fillText(`総合運気スコア: ${r.score}pt`, cv.width/2, 182);
+
+  ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(60,200,cv.width-120,2);
+
+  let y = 240;
+  r.luckyTimes.forEach((t,i) => {
+    ctx.fillStyle = i===0?'rgba(201,168,76,.25)':i===1?'rgba(139,92,246,.15)':'rgba(255,255,255,.06)';
+    ctx.beginPath(); ctx.roundRect(60,y-28,cv.width-120,180,12); ctx.fill();
+    ctx.textAlign='left'; ctx.fillStyle='#C9A84C'; ctx.font='bold 22px serif';
+    ctx.fillText(`第${t.rank}候補 | ${t.date}（${t.weekday}）`, 90, y+10);
+    ctx.fillStyle='#EDE6F5'; ctx.font='bold 28px serif';
+    ctx.fillText(t.time, 90, y+50);
+    ctx.fillStyle='#F87171'; ctx.font='bold 22px serif';
+    ctx.fillText(`🎯 激アツ: ${t.pinpoint}`, 90, y+85);
+    ctx.textAlign='right'; ctx.fillStyle='#EDD070'; ctx.font='bold 26px serif';
+    ctx.fillText(`💎 10連 × ${t.tenPulls}`, cv.width-90, y+50);
+    ctx.fillStyle='#6E5F88'; ctx.font='18px serif';
+    ctx.fillText(`運気 ${t.score}pt`, cv.width-90, y+90);
+    ctx.textAlign='left';
+    y += 210;
+  });
+
+  // footer
+  ctx.fillStyle='rgba(255,255,255,.12)'; ctx.fillRect(60,y,cv.width-120,2);
+  ctx.fillStyle='#6E5F88'; ctx.font='16px serif'; ctx.textAlign='center';
+  ctx.fillText('Powered by クトちゃん | 霊眼統合占術システム', cv.width/2, y+30);
+
+  const link = document.createElement('a');
+  link.download = `GachaOracle_${r.gameTitle}_${new Date().toLocaleDateString('ja-JP')}.png`;
+  link.href = cv.toDataURL(); link.click();
+}
+
+// ═══════════════════════════════════════════════════
+//   FORM HANDLING
+// ═══════════════════════════════════════════════════
+document.getElementById('gachaDeadline').min = new Date().toISOString().split('T')[0];
+
+document.getElementById('gameTitle').addEventListener('change', function() {
+  const show = this.value === 'その他';
+  document.getElementById('customGameGroup').style.display = show ? 'block' : 'none';
+  document.getElementById('customGame').required = show;
+});
+
+document.getElementById('fortuneForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  let gameTitle = document.getElementById('gameTitle').value;
+  if(gameTitle === 'その他') gameTitle = document.getElementById('customGame').value;
+
+  const params = {
+    gameTitle,
+    targetName:       document.getElementById('targetName').value,
+    gachaTitle:       document.getElementById('gachaTitle').value,
+    gachaDeadline:    document.getElementById('gachaDeadline').value,
+    gachaDeadlineTime:document.getElementById('gachaDeadlineTime').value,
+    birthdate:        document.getElementById('birthdate').value,
+    zodiac:           document.getElementById('zodiac').value,
+    bloodType:        document.getElementById('bloodType').value,
+    eto:              document.getElementById('eto').value,
+  };
+
+  // loading
+  const loading = document.getElementById('loading');
+  const result  = document.getElementById('result');
+  loading.classList.add('show');
+  result.classList.remove('show');
+
+  // step animation
+  const steps = ['ls1','ls2','ls3','ls4','ls5'];
+  steps.forEach((id,i) => setTimeout(() => document.getElementById(id)?.classList.add('lit'), i*360));
+
+  setTimeout(() => {
+    const data = calculateFortune(params);
+    displayResult(data);
+    loading.classList.remove('show');
+    steps.forEach(id => document.getElementById(id)?.classList.remove('lit'));
+    result.classList.add('show');
+    result.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 2100);
+});
+
+function resetFortune() {
+  if(confirm('結果をリセットして新しく占い直しますか？\n同じ条件でも異なる運勢が算出されます。')) {
+    localStorage.removeItem('gachaOracle_result');
+    localStorage.removeItem('gachaOracle_key');
+    document.getElementById('result').classList.remove('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+    alert('リセット完了。フォームから再入力してください。');
+  }
+}
+</script>
+</body>
+</html>
